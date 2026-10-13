@@ -1,0 +1,30 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # The owner's self-hosted runners; a pull request from a fork never runs there.
+    runs-on: ${{ github.event.pull_request.head.repo.fork && fromJSON('["ubuntu-24.04"]') || fromJSON('["self-hosted", "nix", "linux"]') }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - if: runner.environment == 'github-hosted' # the ARC runner image has Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+      - name: Flake checks (spec, model, tests)
+        run: nix flake check -L --no-update-lock-file
+        env: { NIX_CONFIG: "max-jobs = 1" } # one build at a time
+      - name: Gate
+        run: nix develop --command just check
+        env: { NIX_CONFIG: "max-jobs = 1" }
+      - run: git status --porcelain && test -z "$(git status --porcelain)" # the gate writes only ignored paths

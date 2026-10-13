@@ -1,0 +1,436 @@
+{
+ "schema": "adi-sms-vectors-v2",
+ "mean_us": 100000,
+ "fail_ppm": 500000,
+ "mix": [
+  {
+   "in": 0,
+   "out": 0
+  },
+  {
+   "in": 1,
+   "out": 6238072747940578789
+  },
+  {
+   "in": 11400714819323198485,
+   "out": 16294208416658607535
+  },
+  {
+   "in": 18446744073709551615,
+   "out": 13029008266876403067
+  }
+ ],
+ "cases": [
+  {
+   "seed": 0,
+   "i": 0,
+   "key": 12035550249420947055,
+   "len": 3,
+   "body": "22J",
+   "lat": [
+    64554,
+    168025,
+    33597
+   ],
+   "fail": [
+    true,
+    false,
+    false
+   ]
+  },
+  {
+   "seed": 0,
+   "i": 1,
+   "key": 627405149472732430,
+   "len": 91,
+   "body": "PvU92ZogGmFP5sP3eMErA0T5SvlgrkzY6eiif4GPkKnvbZE6hiff1zQFVnHSGUgcGbp.kWlct6vSJ KobdPWhlcvUnz",
+   "lat": [
+    67374,
+    1514,
+    63153
+   ],
+   "fail": [
+    true,
+    false,
+    false
+   ]
+  },
+  {
+   "seed": 0,
+   "i": 7,
+   "key": 7259628554680249319,
+   "len": 70,
+   "body": "zxKYWqq228w7LR1x50BhCx42oKBFVeGRMHK kTYriO37hOgaKfnOoBD1jOdD jPOfI1Yq9",
+   "lat": [
+    85234,
+    138219,
+    36820
+   ],
+   "fail": [
+    true,
+    true,
+    false
+   ]
+  },
+  {
+   "seed": 0,
+   "i": 4294967296,
+   "key": 3259556482872597323,
+   "len": 16,
+   "body": "PkJVi1VUiKDlACgt",
+   "lat": [
+    40159,
+    200304,
+    46528
+   ],
+   "fail": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "seed": 0,
+   "i": 18446744073709551615,
+   "key": 3303439293501059696,
+   "len": 33,
+   "body": ".mlmU0IPpN4pHGBTRAMtoPMVj6KiMI.p2",
+   "lat": [
+    60124,
+    14060,
+    231356
+   ],
+   "fail": [
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "seed": 1,
+   "i": 0,
+   "key": 6791897765849424158,
+   "len": 92,
+   "body": "YPebA5ooM3MxA6fef2fPon 3ilkdYiLCubpdhTGMLPGtayiN9Pv sHReigSf5UO.IyT2YHz5ve9xB0kNa8k4STTrDsdp",
+   "lat": [
+    190631,
+    104210,
+    192022
+   ],
+   "fail": [
+    false,
+    false,
+    true
+   ]
+  },
+  {
+   "seed": 1,
+   "i": 1,
+   "key": 16860738450190168606,
+   "len": 16,
+   "body": "mit5pf AV9RamgN4",
+   "lat": [
+    121637,
+    110724,
+    115752
+   ],
+   "fail": [
+    true,
+    true,
+    false
+   ]
+  },
+  {
+   "seed": 1,
+   "i": 7,
+   "key": 8581286081765471666,
+   "len": 23,
+   "body": "NPXCcevPWsvvauEs0knjVHC",
+   "lat": [
+    63785,
+    31482,
+    147629
+   ],
+   "fail": [
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "seed": 1,
+   "i": 4294967296,
+   "key": 2380977689032267845,
+   "len": 47,
+   "body": "i6tVi7he72WpmpO33eN.9QBpbhjatZloa e.KLREyJ9aDVa",
+   "lat": [
+    144122,
+    91724,
+    418071
+   ],
+   "fail": [
+    false,
+    true,
+    true
+   ]
+  },
+  {
+   "seed": 1,
+   "i": 18446744073709551615,
+   "key": 11917333196513764506,
+   "len": 71,
+   "body": "tvKtVjnqp9 mKQp7R6Okuw3Ei..LqLzbZwLX3SMC2lKJKAWIlXd6zfPZztQfSllB0XkZLEV",
+   "lat": [
+    267846,
+    74167,
+    164709
+   ],
+   "fail": [
+    false,
+    false,
+    true
+   ]
+  },
+  {
+   "seed": 42,
+   "i": 0,
+   "key": 6332618229526065668,
+   "len": 93,
+   "body": "u3JBFHb1oEYYfnvpT13TDCL5UgBLyNcAPkpWan.m8MA8t0XK6C9r2SzN4dmIt5.i7mOKT0NkIxCAEQ3sifS4tf6eKEnHi",
+   "lat": [
+    150536,
+    54328,
+    30413
+   ],
+   "fail": [
+    false,
+    false,
+    true
+   ]
+  },
+  {
+   "seed": 42,
+   "i": 1,
+   "key": 17532488217563185893,
+   "len": 72,
+   "body": "6hujdnNesgoILVMXy0YQd2coaQMWlgAB1lE5OhUUNa R.ERTnuUi0MAWyCJoWj5fjw66cN L",
+   "lat": [
+    231233,
+    21306,
+    149408
+   ],
+   "fail": [
+    true,
+    false,
+    true
+   ]
+  },
+  {
+   "seed": 42,
+   "i": 7,
+   "key": 1587005860896957696,
+   "len": 31,
+   "body": "qmS3Rt9MnuUQoFGr XVthY5W9tiqdQX",
+   "lat": [
+    18428,
+    16920,
+    12724
+   ],
+   "fail": [
+    true,
+    false,
+    true
+   ]
+  },
+  {
+   "seed": 42,
+   "i": 4294967296,
+   "key": 9967884005354511557,
+   "len": 99,
+   "body": "RSMiOBXe4SPzJcZ36UeP0yV6MbChvvu ab64ci8qimUG2.4E vbd.iWQOzPjvs9jJPn98nvXzMuWx7pvfJKljrfYHUojW2y6Jli",
+   "lat": [
+    104006,
+    193277,
+    10200
+   ],
+   "fail": [
+    false,
+    true,
+    false
+   ]
+  },
+  {
+   "seed": 42,
+   "i": 18446744073709551615,
+   "key": 14714397866638982195,
+   "len": 52,
+   "body": "N0kyLOgXOpWlhEcuERiEVdHK0nINTVe62eStPyO0WSsBkqChJHN.",
+   "lat": [
+    107074,
+    26905,
+    119825
+   ],
+   "fail": [
+    true,
+    false,
+    false
+   ]
+  },
+  {
+   "seed": 9007199254740991,
+   "i": 0,
+   "key": 16963409051088802402,
+   "len": 77,
+   "body": "pH9hAqh hppikJdngg1jD6aaweKYidsJTrgAI84uigY8WS3qx5ph9YUVzLZAr81GXj SMvCtLPjMM",
+   "lat": [
+    226677,
+    72785,
+    61801
+   ],
+   "fail": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "seed": 9007199254740991,
+   "i": 1,
+   "key": 11122427012278644215,
+   "len": 13,
+   "body": "TyT0b 127La39",
+   "lat": [
+    115488,
+    438280,
+    7782
+   ],
+   "fail": [
+    true,
+    false,
+    false
+   ]
+  },
+  {
+   "seed": 9007199254740991,
+   "i": 7,
+   "key": 5568724952096072371,
+   "len": 61,
+   "body": "DNsMQ83OfH0gTPCOp.ccmtyja4f0OgyGXyGwy63dr PMIYDynbB3oKJBCo9.j",
+   "lat": [
+    623621,
+    133081,
+    88548
+   ],
+   "fail": [
+    false,
+    false,
+    true
+   ]
+  },
+  {
+   "seed": 9007199254740991,
+   "i": 4294967296,
+   "key": 10873768825875457927,
+   "len": 24,
+   "body": "Ie5m Ltzy7TCdtJI4XgfCL0Z",
+   "lat": [
+    83422,
+    118007,
+    16756
+   ],
+   "fail": [
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "seed": 9007199254740991,
+   "i": 18446744073709551615,
+   "key": 12004728787918139639,
+   "len": 61,
+   "body": " u5RMxsAgHvJBC2dTcT4EvaqGY8ZhSH6 L2hl.uI jfEThS4r0tZ3wmfLfZ1 ",
+   "lat": [
+    15928,
+    500657,
+    107699
+   ],
+   "fail": [
+    true,
+    false,
+    true
+   ]
+  }
+ ],
+ "runs": [
+  {
+   "cfg": {
+    "seed": 1,
+    "mean_us": 100000,
+    "fail_ppm": 100000,
+    "attempts": 1,
+    "backoff_us": 10000
+   },
+   "a": 0,
+   "b": 1000,
+   "summary": [
+    893,
+    107,
+    1000,
+    99301920
+   ]
+  },
+  {
+   "cfg": {
+    "seed": 7,
+    "mean_us": 5000,
+    "fail_ppm": 500000,
+    "attempts": 4,
+    "backoff_us": 1000
+   },
+   "a": 0,
+   "b": 1000,
+   "summary": [
+    940,
+    60,
+    1861,
+    10663632
+   ]
+  },
+  {
+   "cfg": {
+    "seed": 42,
+    "mean_us": 0,
+    "fail_ppm": 1000000,
+    "attempts": 10,
+    "backoff_us": 1000000
+   },
+   "a": 0,
+   "b": 10,
+   "summary": [
+    0,
+    10,
+    100,
+    5110000000
+   ]
+  },
+  {
+   "cfg": {
+    "seed": 9007199254740991,
+    "mean_us": 10000000,
+    "fail_ppm": 0,
+    "attempts": 1,
+    "backoff_us": 0
+   },
+   "a": 1099511627776,
+   "b": 1099511627876,
+   "summary": [
+    100,
+    0,
+    100,
+    1016446902
+   ]
+  }
+ ],
+ "arr": [13316645837908319897, 14215353010590966123, 6148429033604455387, 8022732883644684705, 7696341264623360010, 2458208613172002312, 16971712775386191641, 17055128074866077742, 13792953985539572005, 16741657525504985518, 14029997423219481936, 9329287472024339362, 7467248962339964970, 4991789408444350525, 5712862488363558493, 3478292684020416245, 11521951967805081268, 815533420758592988, 3894731993792825971, 14188445164558581806]
+}

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 450" width="760" height="450" font-family="Helvetica, Arial, sans-serif" font-size="14">
+  <title>adi-sms data flow: ovals are processes, rectangles are data</title>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#444"/>
+    </marker>
+  </defs>
+  <rect width="760" height="450" fill="#fff"/>
+  <g fill="#eef3fb" stroke="#2b5797" stroke-width="1.5">
+    <ellipse cx="110" cy="70" rx="80" ry="30"/>
+    <ellipse cx="650" cy="70" rx="80" ry="30"/>
+    <ellipse cx="170" cy="215" rx="75" ry="28"/>
+    <ellipse cx="380" cy="215" rx="75" ry="28"/>
+    <ellipse cx="590" cy="215" rx="75" ry="28"/>
+    <ellipse cx="200" cy="395" rx="80" ry="30"/>
+  </g>
+  <g fill="#fdf3e1" stroke="#9a6b16" stroke-width="1.5">
+    <rect x="290" y="45" width="180" height="50"/>
+    <rect x="270" y="295" width="220" height="50"/>
+    <rect x="470" y="370" width="200" height="50"/>
+  </g>
+  <g text-anchor="middle" fill="#111">
+    <text x="110" y="75">Producer</text>
+    <text x="650" y="75">Pipeline</text>
+    <text x="170" y="220">Sender 1</text>
+    <text x="380" y="220">Sender 2</text>
+    <text x="590" y="220">Sender M</text>
+    <text x="200" y="400">Monitor</text>
+    <text x="380" y="67">Queue (at most C)</text>
+    <text x="380" y="85" font-size="12">Messages: id, body, created_us</text>
+    <text x="380" y="317">Stats</text>
+    <text x="380" y="335" font-size="12">each sender's Summary; the commits</text>
+    <text x="570" y="392">Display</text>
+    <text x="570" y="410" font-size="12">a snapshot line every T</text>
+  </g>
+  <g stroke="#444" stroke-width="1.5" fill="none" marker-end="url(#a)">
+    <path d="M190 70H288"/>
+    <path d="M570 70H472"/>
+    <path d="M330 95L200 188"/>
+    <path d="M380 95V187"/>
+    <path d="M430 95L560 188"/>
+    <path d="M650 100V150H590V185" stroke-dasharray="5 4"/>
+    <path d="M170 243L300 293"/>
+    <path d="M380 243V293"/>
+    <path d="M590 243L460 293"/>
+    <path d="M300 345L240 368"/>
+    <path d="M280 395H468"/>
+  </g>
+  <g fill="#333" font-size="12">
+    <text x="200" y="60">put: blocks at C</text>
+    <text x="490" y="60">creates</text>
+    <text x="390" y="140">get: atomic</text>
+    <text x="660" y="140">spawn, stop</text>
+    <text x="400" y="270">done, report</text>
+    <text x="215" y="350">every T</text>
+    <text x="320" y="388">sum</text>
+  </g>
+</svg>

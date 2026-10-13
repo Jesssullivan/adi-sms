@@ -1,0 +1,132 @@
+---
+title: Design
+order: 2
+---
+
+> If all this folding and this monoid nonsense feels sketchy and scary, I suggest watching [Antoine Leblanc’s video essay on Monads](https://www.youtube.com/watch?v=LekhueQ4zVU) as a good place to begin. Similarly, I suggest reading through their blog https://nauths.fr/en/ as well as Gabby’s blog https://haskellforall.com/ for general discussions involving Haskell and functional programming paradigms.
+
+## data flow, concurrent folds, Monoid stuff 🖖
+
+Alrighty, so at the expense of making this way more complex than any of this needs to be in a quest to really put the **simulation** into 
+`sms_simulation.md`, we are making some sizable tradoffs I'll need to defend; in particular, we are giving up roughly 3x CPU time reduction
+in a drastically simpler (ie. whatever a data structures & algorithms (DSA) textbook solution would suggest) implementation for certainty and 
+replayability.  
+
+Before going further, please bear in mind in this problem, throughput is set by M, P and message time in flight (which in this case, is mostly sleeps; we are mostly waiting around.
+
+### ⊕ Summary is a monoid which each Sender process accumulates folds into it and the Monitor folds the senders' folds
+
+> "Fold" is a standard FP term for reducing a sequence to one value where you combine the elements with a binary operation starting from an initial value.
+
+If the monoid is also commutative- such as our ⊕ Summary, order and grouping don't change the result. That's why any order of senders, and any split of the ids into chunks reach the same total.
+
+- In Haskell, we can do this with foldr/foldl. Over a monoid it's `foldMap f: map each element with f`, then combine the results with Semigroup combine operator <>, starting from mempty
+- In Python, it's functools.reduce. sum(xs, start)
+
+Each sender computes one message's fate with deliver(cfg, i) (fate.py:98): a few SplitMix64 draws, microseconds of CPU. 
+
+it then sleeps through that message's latency, about 100 ms by default. We can state the per-message CPU is roughly 1/10,000 of the time in flight. Throughput is about min(λ, P·M/E[τ]), which is set by latency and the rate, not by cores. 
+
+Under the GIL the sleeping senders already overlap, because sleep and Valkey socket I/O release the GIL.  You can find my exploration of freethreading in a later document. 
+
+![The data flow: ovals are processes and rectangles are data](./dfd.svg)
+
+| name | kind | what it does |
+|---|---|---|
+| Pipeline | process | creates the Queue, starts the Producer, M Senders (or P workers of M) and the Monitor; `scale(m)` while it runs |
+| Producer | process | makes ids 0 to N − 1 as Messages, puts each and sleeps until the next is due |
+| Message | data | `Message(id, body, created_us)`: body `fate.body(s, id)`, `created_us` its due time |
+| Queue | data | at most C messages; `put` blocks at C, `get` hands message to a sender or `None` (stop), `done` commits, `report` passes a sender's Summary |
+| Sender | process | `get`, `gateway.send`, `done`, `report` its own Summary; a last report at stop |
+| Stats | data | each sender's latest Summary (local), or the totals hash the commits increment (stream) |
+| Monitor | process | sums Stats every T and prints a snapshot; at the end the total and `check` |
+
+A sender owns its Summary and posts copies to the Monitor: one dict under the queue's lock (threads), a stats queue
+(processes), or the totals hash and the `snap:<name>` keys (stream). 
+
+No sender reads another's total.   All senders share one μ and one p, so a total never depends on which sender took which message.
+
+## Weeding through QuickCheck lore on SplitMix64 implimentations
+
+Find below the confluence of a bunch of reading and exploring and hacking on this via the QuickCheck docs; I used 
+my local LLM model and harness to iterate on this in Haskell. 
+
+Every random choice is a pure function of (seed s, message i, attempt j, purpose). Words are 64-bit, mod 2⁶⁴
+(`src/adi_sms/fate.py`, restated in `spec/model/Fate.hs`):
+
+```text
+# THis is what I ended up with after a fair bit of reading, headscratching and slopping around:
+
+# I stole the algo from here https://prng.di.unimi.it/splitmix64.c, which then points to 
+# https://docs.oracle.com/javase/8/docs/api/java/util/SplittableRandom.html
+# I got the constant words from David Stafford's post here, which I mention in my video. 
+# http://zimbry.blogspot.com/2011/09/better-bit-mixing-improving-on.html
+# Stafford refers to this as his Mix13.
+
+mix(z)        = z ^= z >> 30; z *= 0xBF58476D1CE4E5B9; z ^= z >> 27; z *= 0x94D049BB133111EB; return z ^ (z >> 31)
+absorb(h, w)  = mix((h ^ w) + 0x9E3779B97F4A7C15)
+key(s, i)     = absorb(absorb(0, s), i)
+draw(k, p, j) = absorb(k, (p << 56) | j)             purposes LEN=1 BODY=2 LAT=3 FAIL=4 ARR=5
+length(k)     = draw(k, LEN, 0) mod 101
+body(s, i)    = the first length(k) little-endian bytes of draw(k, BODY, 0), draw(k, BODY, 1), ..., as ALPHABET[byte & 63]
+latency(k, j) = floor(-mu * log1p(-u)),  u = (draw(k, LAT, j) >> 11) * 2^-53
+fails(k, j)   = draw(k, FAIL, j) < floor(ppm * 2^64 / 10^6)
+gap(s, i, l)  = -log1p(-u) / l seconds,  u = (draw(k, ARR, 0) >> 11) * 2^-53;  0 when l = 0
+```
+
+## Summary monoid and exactly-once
+
+A `Summary` is (sent, failed, attempts, time_us) with componentwise addition and identity 0 is literally a commutative monoid. Let
+run(a, b) be the sum of deliver(i) over the ids a to b − 1.  This is exciting!  
+
+If each id in 0 to N − 1 is committed exactly once, the committed total equals run(0, N). That holds for any number of
+senders, any senders started or stopped, any assignment of ids and any completion order. deliver(i) depends only on
+the configuration and i, never on the sender, its level or the time. A finite sum in a commutative monoid does not
+depend on order or bracketing. `fold_equivalence` in 03-properties tests it.
+
+`sms fold` is the oracle for every run. An atomic take (local) or the commit script (stream) supplies the exactly-once
+premise. `sms fold --threads T` sums T id ranges to the same total. Counts match on every platform, and `time_us`
+matches where processes share one libm (`log1p`).
+
+## backpressure and bounded memory
+
+The queue holds at most C messages, and `put` blocks while it is full. Shedding load is not built and AFAICT shouldn't be, 
+as this would break our exactly-once total.  in my whiteboard video I falsely state at most once a few times I think, which
+doesn't make a whole lot of sense.  I'll probably speed up the WB sessions anyway.
+
+## atomic commit at bigger scales, such as on stream
+
+A pod's sender is one consumer of the group `senders`, named `<pod>-<k>`. Each loop tries
+`XAUTOCLAIM sms senders <me> <lease> 0-0 COUNT 1` (an entry held past the lease, 30 s by default), then
+`XREADGROUP ... COUNT 1 BLOCK 1000 STREAMS sms >`, then `GET stop` (exit 0 or loop again). After the send it commits
+with one script, `src/adi_sms/commit.lua`, run with EVALSHA:
+
+```lua
+if redis.call('XACK', KEYS[1], 'senders', ARGV[1]) == 0 then return 0 end -- not new: count nothing
+redis.call('HINCRBY', KEYS[2], 'sent', ARGV[2])
+-- ... failed, attempts, time_us, and done += 1
+redis.call('XDEL', KEYS[1], ARGV[1])
+return 1
+```
+
+Valkey runs a script *without* interleaving, so an ack, count and the delete either happen together or not at all. 
+
+
+The count must branch on the ack's result in one server-side step:
+
+| option | why not |
+|---|---|
+| MULTI/EXEC | cannot branch on XACK's result inside the transaction |
+| WATCH, then MULTI | an optimistic retry: under contention the retries grow with M |
+| a set of done ids | costs O(N) memory, and N is unbounded |
+| a Valkey function | also Lua, plus a library to load for the same seven lines |
+
+**Leases.** Every T, and at least three times per lease, `sms consume` re-claims its senders' messages with
+`XCLAIM ... 0 <id> JUSTID`. That resets their idle time, so only a dead or stalled pod's messages are reclaimed.
+
+**Exit codes.** A pod exits 0 once `stop` is "1". On a scale-down's SIGTERM its senders commit the message in hand and
+write their snapshots, then it exits 143, which the Job's failure policy ignores. A sender thread that dies of an error
+stops the pod with exit 1, which counts toward the Job's `backoffLimit`.
+
+**Halt.** The demo's halt button, or Ctrl-C on `sms monitor`, sets `halt` and `stop` to "1". The producer exits 0 at
+its next put. The senders drain the queue and exit 0. A halted run prints its partial totals with `"check": false`.

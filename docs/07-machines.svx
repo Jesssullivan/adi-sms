@@ -1,0 +1,56 @@
+---
+title: Machines
+order: 7
+summary: Where stuff runs
+---
+
+# Machines
+
+The live demo runs on a small Kubernetes cluster of recycled hardware in my basement.
+
+> My ewaste special™ cluster in the basement; demo runs are timed on this cluster without a node pin, because the totals
+> don't depend on which node a pod lands on (the check passes on every node). This particular node [the demo node] is a
+> gently modified Dell 7810 dual Xeon machine running a bespoke Linux kernel of mine, just for this node; (the
+> hardware has been modified to run multiple PSUs concurrently for 1.8 kW sustained power draw to power a number of AMD
+> GPUs with reasonably OK power telemetry and direct KVM control over the PSUs and server out of band).
+
+
+## Hardware
+
+| Node | Machine | Threads | Memory | Role |
+|---|---|---|---|---|
+| big node | Dell Precision T7810, two Xeon E5-2630 v3 (8 cores each) | 32 | about 220 GB DDR4 in 7 of 8 slots | control plane, etcd, workloads |
+| medium node | Dell Precision T7810, two Xeon E5-2630 v3 (8 cores each) | 32 | 56 GB DDR4 | control plane, etcd, workloads |
+| smol node, big storage | ASUS Z97-E board, Intel Core i5-4590 (4 cores) | 4 | 16 GB DDR3 | control plane, etcd, storage |
+
+--- 
+
+- The demo lives in one namespace with the restricted Pod Security level, a ResourceQuota and the boundary
+  NetworkPolicy. Infrastructure code outside these repositories owns it.
+- The run templates are `deploy/queue.yaml`, `deploy/producer.yaml` and `deploy/senders.yaml`. The web, Grafana and RBAC
+  manifests are in the slide site's repository, under `overlay/k8s/` and `overlay/grafana/`.
+
+At the largest run (P_MAX = 10 sender pods) the namespace holds exactly the quota's 14 pods:
+
+| Pod | Count | CPU request | CPU limit | Memory limit |
+|---|---|---|---|---|
+| web | 1 | 100m | 500m | 256 MiB |
+| grafana (Prometheus and Grafana) | 1 | 20m | 700m | 1280 MiB |
+| queue (Valkey) | 1 | 10m | 250m | 192 MiB |
+| producer | 1 | 10m | 1000m | 128 MiB |
+| senders | 10 | 10m each | 500m each | 128 MiB each |
+| Total | 14 | 240m | 7.45 CPUs | about 3.1 GiB |
+| Quota | 14 | 2 CPUs | 8 CPUs | 6 GiB |
+
+
+## broad strokes of network topology for the curious
+- edge switch is a MikroTik CRS309-1G-8S+IN with 8 SFP+ ports at 10 Gb/s. It routes and serves DHCP. The access
+  switch is a MikroTik CRS310-8G+2S+IN with 8 ports at 2.5 Gb/s. It is pure layer 2, backhual via 10 Gb/s BiDi
+- Each node has an Intel 82599ES 10 Gb/s NIC on a DAC trunk into the edge switch. The two large nodes also share a
+  direct 10 Gb/s DAC (MTU 9000 bytes) for storage replication with Longhorn v2 and SeaweedFS.
+- Two WAS-110 sticks (XGS-PON ONTs in SFP+ modules) connect the edge switch to discreet fibre ISPs. The first carries the
+  primary WAN on 8311 firmware ([my fork of the builder](https://github.com/Jesssullivan/8311-was-110-firmware-builder)).
+- The usually airgapped network management port is managed via a  Mac mini over USB Ethernet using my 
+([DarwinNicUtil](https://github.com/Jesssullivan/DarwinNicUtil)) package for complex network federation with macos.
+
+

@@ -1,0 +1,23 @@
+---
+title: FAQ
+order: 8
+summary: Premeditated answers to questions I know I'd ask myself if I was handed this repo blind.
+---
+
+## Yikes! What's with all the tooling and fluff?
+
+For better or worse, I figured it'd be preferable to represent myself at my default settings at this particular moment
+in time than guess the ergonomic preferences of my reader. While I may have taken more liberties than wise, I do hope
+showing "if left to her own devices, these are some of Jess's devices" is communicative.
+
+As such, my use of justfile entrypoint, nix2container, nix flake, the pattern of working from properties and mappable
+assertions to derive a specification in Dhall and QuickCheck are not to be taken as "Jess thinks these are actually the
+most minimal, efficient or best tools for the job" but "this is Jess in her natural habitat".
+
+## Where is this demo running?
+
+My ewaste special™ cluster in the basement. Demo runs are timed on this cluster without a node pin, because the totals
+don't depend on which node a pod lands on (the check passes on every node). [Machines](./07-machines.svx) has the
+hardware, the network, the power and the cluster.
+
+Routing is terminated via Cloudflare, certs via Google Trust Services via WE1.

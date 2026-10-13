@@ -1,0 +1,37 @@
+---
+title: Overview
+order: 1
+summary: General usage, arguments and high level architecture
+---
+
+
+| level | queue | senders | command |
+|---|---|---|---|
+| threads | `LocalQueue`: `queue.Queue(C)` | M threads in one process | `sms run --level thread` |
+| processes | `ProcQueue`: `multiprocessing.Queue(C)` | P processes of M threads | `sms run --level process --workers P` |
+| pods | `StreamQueue`: Valkey stream `sms`, group `senders` | P pods of M threads | `sms produce`, `sms consume`, `sms monitor` |
+
+
+```sh
+nix develop -c just check  # checks the various things, including properties, model, spec and Jobs
+sms run --level thread --senders 10 --rate 50,400,50  # rate is effectively Producer frequency, in messages per second
+sms run --level process --workers 3 --senders 4  # procs
+sms fold # the Summary monoid every run must reach 
+```
+
+## Param symbols throughout docs, args and frozendict
+
+
+| symbol | flag | meaning | default | bounds |
+|---|---|---|---|---|
+| N | `--n` | messages | 1000 | 0 to 10⁹ |
+| s | `--seed` | seeds every random choice | 1 | 0 to 2⁵³ − 1 |
+| M | `--senders` | threads per process or pod | 10 | 1 to 10⁴ |
+| C | `--capacity` | queue bound | 10 | 1 to 10⁵ |
+| μ | `--mean-us` | mean attempt latency (µs) | 10⁵ | 0 to 10⁷ |
+| p | `--fail-ppm` | failure probability per attempt (ppm) | 10⁵ | 0 to 10⁶ |
+| A | `--attempts` | max attempts per message | 1 | 1 to 10 |
+| β | `--backoff-us` | backoff base (µs) | 10⁴ | 0 to 10⁶ |
+| T | `--interval-ms` | monitor period (ms) | 1000 | 100 to 60000 |
+| λ | `--rate` | arrivals per second (0: closed batch) | 0 | 0 to 10⁶ |
+| P | `--workers` | processes or pods | 1 | 1 to 64 |

@@ -1,0 +1,33 @@
+#we start with ${P} pods at first, each running M sender threads as consumers NAME-0 .. NAME-(M-1) of the
+# group "senders". 
+#
+# The placeholders are as in queue.yaml and producer.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ${JOB}-senders
+spec:
+  parallelism: ${P} # completions unset: the Job is complete when its pods have exited 0
+  backoffLimit: 6 # pod failures retried before the Job fails; a lost pod's message is reclaimed after the lease
+  podFailurePolicy:
+    rules:
+      - action: Ignore # scaled down: SIGTERM, then 128 + 15
+        onExitCodes: { containerName: sms, operator: In, values: [143] }
+      - action: Ignore # evicted or preempted
+        onPodConditions: [{ type: DisruptionTarget, status: "True" }]
+  activeDeadlineSeconds: 3600
+  ttlSecondsAfterFinished: 600 # a finished Job and its pods are deleted after 10 min
+  template:
+    spec:
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 60 # time to finish the message in hand
+      automountServiceAccountToken: false
+      imagePullSecrets: [{ name: "${PULL_SECRET}" }]
+      securityContext: { runAsNonRoot: true, runAsUser: 65532, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: sms
+          image: ${IMAGE}
+          env: [{ name: POD_NAME, valueFrom: { fieldRef: { fieldPath: metadata.name } } }]
+          command: [sms, consume, --queue, "${QUEUE}", "--name=$(POD_NAME)"${FLAGS}]
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: [ALL] } }
+          resources: { requests: { cpu: 10m, memory: 64Mi }, limits: { cpu: 500m, memory: 128Mi } }

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# `just hooks` installs this: ruff on the staged Python files only
+set -euo pipefail
+mapfile -t files < <(git diff --cached --name-only --diff-filter=ACMR -- '*.py')
+((${#files[@]})) || exit 0
+command -v just >/dev/null && command -v ruff >/dev/null || exec nix develop -c "$0"
+just lint "${files[@]}" || { echo "pre-commit: run 'just fmt', then git add the files again" >&2; exit 1; }

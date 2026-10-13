@@ -1,0 +1,124 @@
+{
+  "alphabet": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .",
+  "max_len": 100,
+  "mutants": [
+    {
+      "change": "the producer ignores the queue bound C",
+      "id": "UnboundedQueue",
+      "kills": "bounded_memory"
+    },
+    {
+      "change": "a failed attempt goes back on the bounded queue instead of staying with its sender",
+      "id": "RequeueRetry",
+      "kills": "throughput_law"
+    },
+    {
+      "change": "the count and the ack are two steps, so a redelivered message counts twice",
+      "id": "DoubleCommit",
+      "kills": "fold_equivalence"
+    },
+    {
+      "change": "the take is a read and then a pop, so two senders can take one message",
+      "id": "DoubleTake",
+      "kills": "fold_equivalence"
+    }
+  ],
+  "params": {
+    "attempts": {
+      "default": 1,
+      "doc": "A: attempts per message, at most",
+      "max": 10,
+      "min": 1
+    },
+    "backoff_us": {
+      "default": 10000,
+      "doc": "beta: wait beta 2^(j-1) before attempt j, us",
+      "max": 1000000,
+      "min": 0
+    },
+    "capacity": {
+      "default": 10,
+      "doc": "C: queue bound",
+      "max": 100000,
+      "min": 1
+    },
+    "fail_ppm": {
+      "default": 100000,
+      "doc": "p: failure probability per attempt, ppm",
+      "max": 1000000,
+      "min": 0
+    },
+    "interval_ms": {
+      "default": 1000,
+      "doc": "T: monitor period, ms",
+      "max": 60000,
+      "min": 100
+    },
+    "mean_us": {
+      "default": 100000,
+      "doc": "mu: mean attempt latency, us",
+      "max": 10000000,
+      "min": 0
+    },
+    "n": {
+      "default": 1000,
+      "doc": "N: messages",
+      "max": 1000000000,
+      "min": 0
+    },
+    "rate": {
+      "default": 0,
+      "doc": "lambda: arrivals per second, 0 = all at once",
+      "max": 1000000,
+      "min": 0
+    },
+    "seed": {
+      "default": 1,
+      "doc": "s: every random choice derives from it",
+      "max": 9007199254740991,
+      "min": 0
+    },
+    "senders": {
+      "default": 10,
+      "doc": "M: concurrent senders",
+      "max": 10000,
+      "min": 1
+    },
+    "workers": {
+      "default": 1,
+      "doc": "P: processes or pods, each with M senders",
+      "max": 64,
+      "min": 1
+    }
+  },
+  "properties": [
+    {
+      "claim": "Every message has 0 <= length <= 100 symbols from the alphabet and is a pure function of (seed, i).",
+      "id": "message_valid"
+    },
+    {
+      "claim": "For any queue (threads, processes or a stream), any senders started and stopped during the run, a sender killed holding a message, and any interleaving, the committed total equals the pure fold run_range(0, N); a redelivered message counts once.",
+      "id": "fold_equivalence"
+    },
+    {
+      "claim": "At most C messages are queued and at most P M are in flight; the producer blocks at C, so the heap is O(C + M), independent of N.",
+      "id": "bounded_memory"
+    },
+    {
+      "claim": "Over 2^16 messages, failure rates lie within Bernstein bounds of p and p^A and the mean latency within a Chernoff bound of mu, at delta = 1e-9; p = 0 and p = 1 are exact.",
+      "id": "calibrated_fate"
+    },
+    {
+      "claim": "For the closed batch (lambda = 0), in virtual time the makespan T obeys max(S/M, max tau) <= T <= S/M + (1 - 1/M) max tau (Graham); in the model every reachable state drains.",
+      "id": "throughput_law"
+    },
+    {
+      "claim": "The monitor sums each sender's latest report. Its snapshots never decrease, in virtual time each follows the previous one by T (the last by at most T), and the last equals the committed total.",
+      "id": "monitor_monotone"
+    },
+    {
+      "claim": "With Poisson arrivals at lambda below the capacity M / E[tau], the rates in and out are within 15% of lambda; at 4x the capacity the queue fills to C and the rate in falls to the rate out, within 15% of the capacity.",
+      "id": "little_law"
+    }
+  ]
+}

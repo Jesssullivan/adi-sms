@@ -1,0 +1,32 @@
+[project]
+name = "adi-sms"
+version = "0.2.0"
+description = "adi-sms is an SMS simulation built around some PBTs and a commutative monoid ^w^"
+readme = "README.md"
+author = "Jess Sullivan"
+requires-python = ">=3.15"
+dependencies = [
+    "redis>=8.1.0",
+]
+
+[project.scripts]
+sms = "adi_sms.__main__:main"
+
+[dependency-groups]
+dev = ["pytest>=9.1,<10", "hypothesis>=6.168,<7", "pyyaml>=6.0.3,<7"]  # the property tests
+
+[build-system]
+requires = ["uv_build>=0.12.20,<0.14"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-markers", "--strict-config", "-ra"]
+filterwarnings = ["error"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py315" # frozendict is a 3.15 builtin (F821 under py314)
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]

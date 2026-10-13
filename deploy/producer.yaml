@@ -1,0 +1,22 @@
+# One routine's producer; N messages onto the stream at the live rate (the queue's key `rate`), held at C queued.
+# ${QUEUE} is the queue pod's HOST:PORT and ${FLAGS} `, "--flag=value"` per Config field; the rest as in queue.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ${JOB}-producer
+spec:
+  backoffLimit: 0 # a second producer would add every id again, can't have that
+  activeDeadlineSeconds: 3600
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      imagePullSecrets: [{ name: "${PULL_SECRET}" }]
+      securityContext: { runAsNonRoot: true, runAsUser: 65532, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: sms
+          image: ${IMAGE}
+          command: [sms, produce, --queue, "${QUEUE}"${FLAGS}]
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: [ALL] } }
+          resources: { requests: { cpu: 10m, memory: 64Mi }, limits: { cpu: 1000m, memory: 128Mi } }

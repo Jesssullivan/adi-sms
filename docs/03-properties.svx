@@ -1,0 +1,31 @@
+---
+title: Properties!
+order: 3
+summary: PBTs! Properties first; this is how we arrive at a functional model.
+---
+
+`spec/Spec.dhall` establishes seven properties. Each is a Hypothesis test in `tests/test_properties.py`.
+
+
+Four of these are checked within `spec/model/` as well, where four mutants must each fail.
+
+| name | claim | test | mutant |
+|---|---|---|---|
+| `message_valid` | 0 to 100 alphabet symbols per body; a pure function of (seed, id) | `test_message_valid`, 28 golden vectors; model | |
+| `fold_equivalence` | the committed total equals `run_range(0, N)` for any queue, interleaving, scaling or killed sender; a redelivery counts once | `test_fold_equivalence` (threads with a controller, processes, pods on a real Valkey with leases shorter than a send); model | `DoubleCommit`, `DoubleTake` |
+| `bounded_memory` | at most C queued and PM in flight; the producer blocks at C; heap O(C + M) | `test_bounded_memory` (controller scales down and up), stream peaks; model | `UnboundedQueue` |
+| `calibrated_fate` | over 2¹⁶ messages at δ = 10⁻⁹: failure rates within Bernstein bounds of p and pᴬ, mean latency within a Chernoff bound of μ; p = 0 and p = 1 exact | `test_calibrated_fate` | |
+| `throughput_law` | closed batch: max(S/M, max τ) ≤ makespan ≤ S/M + (1 − 1/M) max τ (Graham); model: every reachable state drains | `test_throughput_law`; model | `RequeueRetry` |
+| `monitor_monotone` | snapshots never decrease and come T apart (the last within T); the last equals the committed total | `test_monitor_monotone` | |
+| `little_law` | below capacity M / E[τ], rates in and out within 15% of λ; at 4× capacity the queue fills to C and the rate in falls to the rate out (flow balance, not L = λW) | `test_little_law` | |
+
+Hypothesis runs 60 derandomized examples per property (1000 with `HYPOTHESIS_PROFILE=deep`) plus explicit ones.
+`calibrated_fate` runs 7 examples of 2¹⁶ messages and `little_law` 10 runs of 1000. The local tests run in virtual time:
+when every live thread waits, the clock
+jumps to the earliest deadline. A run of simulated hours takes milliseconds and repeats exactly 🤘
+
+## model
+
+`spec/model/Model.hs` states its checks as QuickCheck properties. It replays the generated golden vectors against `Fate.hs`,
+ checks `message_valid` and the monoid law over random fates and partitions and defines a
+small-step pipeline.

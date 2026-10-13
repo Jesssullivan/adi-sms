@@ -1,0 +1,31 @@
+# One run's queue on a Valkey server with no persistence.
+
+# it is addressed by its pod IP. 
+# NetworkPolicy is the access control, for better or worse.
+# `just render queue` and the slide site's demo server fill each ${...};
+# nothing else changes per run. ${JOB} is the run name, ${IMAGE} an image with adi-sms and valkey installed,
+# ${PULL_SECRET} an imagePullSecrets name. The pipeline sends SHUTDOWN NOSAVE after
+# the senders finish, so this Job completes and its TTL frees the quota.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ${JOB}-queue
+spec:
+  backoffLimit: 0 # a lost queue loses the run; the pipeline reports it
+  activeDeadlineSeconds: 3600 # a stalled run frees its quota after 1h, please don't stall my stuff
+  ttlSecondsAfterFinished: 600 # a finished Job and its pod are deleted after 10 min
+  template:
+    metadata:
+      labels: { app.kubernetes.io/component: queue }
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false # the queue never calls the Kubernetes API, no need for this
+      imagePullSecrets: [{ name: "${PULL_SECRET}" }]
+      securityContext: { runAsNonRoot: true, runAsUser: 65532, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: valkey
+          image: ${IMAGE}
+          command: [valkey-server, --save, "", --port, "6379", --bind, 0.0.0.0, --protected-mode, "no", --maxmemory, 128mb]
+          ports: [{ containerPort: 6379 }]
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: [ALL] } }
+          resources: { requests: { cpu: 10m, memory: 64Mi }, limits: { cpu: 250m, memory: 192Mi } }

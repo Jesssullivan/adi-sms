@@ -1,0 +1,93 @@
+---
+title: Scaling
+order: 4
+summary: Threads, processes and pods, go big or go home 🤘
+---
+
+
+Threads scale with `scale(m)` in one process, processes with P workers of M threads, and pods with the senders Job's
+`parallelism`. Every level is bound by the far side (send / fail completion), since a sleeping sender uses no CPU. 
+
+
+## but... want to see something cool at the fold level, before we go further?
+
+I timed `sms fold --n 200000 --threads T` on CPython 3.15.0 and on its free-threaded build (PEP 703;
+officially supported since PEP 779 in 3.14- this is still a separate build, ABI `cp315t`). The bench code is not in
+this repo: it lives in [adi-sms-ports/bench](https://github.com/Jesssullivan/adi-sms-ports/tree/main/bench).
+
+Check out these five runs each on a shared 2-socket Xeon E5-2630 v3 (32 hardware threads) at a hand-wavy load average 20 to 24, pinned to 8
+CPUs with `taskset -c 0-7`; here I am first stating the median time then then the range:
+
+| interpreter | 1 thread | 2 threads | 8 threads |
+|---|---|---|---|
+| `python3.15` (GIL on) | 2.32 s (1.98 to 2.40) | 2.35 s (2.17 to 3.63) | 2.46 s (2.00 to 2.94) |
+| `python3.15t` (GIL off) | 2.22 s (1.93 to 2.60) | 1.31 s (1.08 to 2.54) | 0.71 s (0.49 to 1.00) |
+
+The fold is pure CPU, so under the GIL more threads give no speedup. The freethreaded build runs the chunks in
+parallel. The sleeping senders gain nothing from it: they already overlap under the GIL.
+
+
+### Future work: 
+
+Currently, the demo server's controller below is the only scaler.
+
+**KEDA ScaledJob**  KEDA (Kubernetes-based Event-Driven Autoscaler) is a popular package for scale to zero and
+fine tunable scaling patterns;  we could establish some sweet event domains with maybe do some cool constraint
+ studies and linear programming fun; in our simulation here as it currently stands, this would just be further 
+ continuation of kalvinball even more than it already is, and I haven't had the time to implement such a system
+for this project. 
+
+
+## measurement
+
+`created_us` is the time a message is due on the offered schedule, not the time its `put` returned. The sojourn counts the wait at C.
+Thread level reportqs the mean sojourn as `sojourn_ms`. At 4 times capacity `little_law` test checks is at least 0.25 N / capacity
+
+The local monitor emits a snapshot at the start, every T and after the last sender stops. A snapshot
+is the sum of each sender's latest report. Reports only grow, so snapshots never decrease, and the last equals the `monitor_monotone` fold.
+
+"Average time per message" has four readings:
+
+| reading | definition | defaults | shown as |
+|---|---|---|---|
+| service time | `time_us / (sent + failed)`: every attempt and backoff, no queue wait | 99.30 ms | `mean_ms` |
+| time per attempt | `time_us / attempts` | 99.30 ms (A = 1) | derivable |
+| wall time | elapsed time / (sent + failed) = 1/λ | 10.12 ms | `1 / rate` |
+| sojourn | due to commit; all due at 0 in the closed batch | 4859.24 ms | `sojourn_ms` |
+
+`mean_ms` is a ratio of monoid totals, so the level and the number of senders do not change its final value.
+
+
+## Capacity, Little's law, Grahams bound
+
+(wikipedia coming in clutch here, quite a fun rabbit hole)
+
+With every sender busy, Little's law (L = λW, with L = PM busy senders and W = E[τ]) gives the capacity PM / E[τ]. At
+the defaults E[τ] = μ = 100 ms, so 10 senders deliver 100 messages/s, and N = 1000 takes about 10 s: 10.12 s in virtual
+time and 10.14 s in one real run. P(failed) = 0.1. With `--attempts 3`, E[τ] = 112,200 µs.  This also means (λ = 0) 
+puts every message as fast as the queue takes it. A free sender takes the next message (greedy list scheduling), so no 
+sender idles while messages remain, and Graham's bound holds:
+
+```text
+max(S / M, max τ) ≤ T_run ≤ S / M + (1 - 1/M) max τ
+```
+
+## controller 
+
+A hosted run is pretty miuch three Jobs from `deploy/`, filled by the slide site's demo server as `just render` fills them:
+
+- `queue.yaml`: one Valkey pod, addressed by its pod IP, with `--bind 0.0.0.0 --protected-mode no`(NetworkPolicy is my access control here, eheh)
+  `test_fold_equivalence` runs this command through the host's own non-loopback address.
+- `producer.yaml`: one pod running `sms produce`. It reads the keys `rate` and `halt` with every put, so the demo's
+  slider changes λ live and its halt button ends the whole run.
+- `senders.yaml`: `parallelism: P` pods with no `completions`, each running `sms consume` with M sender threads.
+
+The demo server is the controller. Every T it reads the depth, `pending`, `made` and `done`, then patches the senders
+Job's `parallelism`. It sizes from the offered rate (the key `rate`), because backpressure clips the admitted rate
+Δmade/T at the current capacity. By Little's law λ E[τ] senders are busy on average, and a full queue means too few:
+
+```text
+want = ceil(λ E[τ] / M) if λ > 0, else the current P
+want = max(want, P + 1) while queued ≥ C
+P    = clamp(want, 1, P_max),    P_max = 10
+```
