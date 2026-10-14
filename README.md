@@ -2,6 +2,7 @@ Hello friends!
 
 This repository contains my solution to the SMS simulation challenge, received Oct. 9th, written with Python 3.15 (which happens to have also been released Oct 9th; find my use of the new and wonderful builtin immutable type  `frozendict` from [PEP 814](https://peps.python.org/pep-0814/)). :-)
 
+[![Whiteboard Session](https://img.youtube.com/vi/oCGKfrHWBwk/maxresdefault.jpg)](https://youtu.be/oCGKfrHWBwk)
 
 If you'd like to dive right into my interpreted solution code, you may want to beeline into the `./src/adi_sms/` python package, which is effectively two files, `fate.py` and `pipeline.py`.  However, I think it'll be more illuminating to start in my [design document](docs/02-design.svx) or [better yet read the docs](https://adi.clients.xoxd.ai/docs/overview), as I've done my best to walk through (and justify) my approach and decision making.  Or, jump to the [quickstart below](#quickstart)
 
